@@ -150,13 +150,19 @@
     <p class="note" id="flowstats"></p>
   </section>
   <section>
+    <span class="label">Before the dam</span>
+    <label class="opt">1916 map <input id="old" type="range" min="0" max="1" step="0.01" value="0"><span class="val" id="oldv">0%</span></label>
+    <label class="opt"><input id="chan" type="checkbox" checked> River channels in 1916</label>
+    <p class="note">A U.S. Army survey of Gravelly Valley and the town of Hullville, made six years before Scott Dam flooded them. Fitted to today's lidar, so positions are approximate.</p>
+  </section>
+  <section>
     <span class="label">Display</span>
     <label class="opt">Opacity <input id="opacity" type="range" min="0" max="1" step="0.01" value="0.85"><span class="val" id="opv">85%</span></label>
     <label class="opt"><input id="exag" type="checkbox"> 2× vertical exaggeration</label>
     <div class="ramp"></div>
     <div class="ticks"><span>0 ft</span><span id="dmid"></span><span id="dmax"></span></div>
   </section>
-  <p class="foot"><b>Sources</b> · The ground here is PG&amp;E's 2023 sonar survey of the lake floor (FERC P-77), joined to USGS 3DEP lidar. River flows from USGS stream gauges.</p>
+  <p class="foot"><b>Sources</b> · The ground here is PG&amp;E's 2023 sonar survey of the lake floor (FERC P-77), joined to USGS 3DEP lidar. River flows from USGS stream gauges. 1916 survey: U.S. Army Corps of Engineers, published as the USGS Hullville quadrangle (1922).</p>
 </div>
 <script type="module">
 const meta = await (await fetch("meta.json")).json();
@@ -229,6 +235,13 @@ const dyM = (G.north - G.south) / H * 111320;
     credit: "Lakebed: PG&E 2023 bathymetric survey (FERC P-77) + USGS 3DEP",
   })));
 }
+
+// The 1916 Army survey of the valley (hist.py), cut to the basin; faded in by the slider
+const oldMap = new Cesium.ImageryLayer(await Cesium.SingleTileImageryProvider.fromUrl("map1916.webp", {
+  rectangle: Cesium.Rectangle.fromDegrees(G.west, G.south, G.east, G.north),
+  credit: "1916 survey: U.S. Army Corps of Engineers (USGS Hullville quadrangle, 1922)",
+}), { alpha: 0, show: false });
+viewer.imageryLayers.add(oldMap);
 
 // Water is a flat plane at the slider's height; the terrain hides it wherever the ground
 // is higher. A shader keeps it only on cells that connect to the lake bottom at that level,
@@ -348,6 +361,10 @@ for (const key of Object.keys(meta.rivers)) {
     await Cesium.SingleTileImageryProvider.fromUrl(`river_${key}.png`, { rectangle: rect }), { show: false });
   viewer.imageryLayers.add(riverLayers[key]);
 }
+// the 1916 channels, traced from the survey's blue ink, drawn over today's modelled rivers
+const oldChannels = new Cesium.ImageryLayer(
+  await Cesium.SingleTileImageryProvider.fromUrl("river1916.webp", { rectangle: rect }));
+viewer.imageryLayers.add(oldChannels);
 function setFlow(key) {
   for (const [k, layer] of Object.entries(riverLayers)) layer.show = k === key;
   document.querySelectorAll("[data-flow]").forEach(b => b.classList.toggle("on", b.dataset.flow === key));
@@ -372,6 +389,12 @@ document.getElementById("opacity").oninput = e => {
   material.uniforms.alpha = +e.target.value;
   document.getElementById("opv").textContent = Math.round(e.target.value * 100) + "%";
 };
+document.getElementById("old").oninput = e => {
+  oldMap.alpha = +e.target.value;
+  oldMap.show = oldMap.alpha > 0;
+  document.getElementById("oldv").textContent = Math.round(e.target.value * 100) + "%";
+};
+document.getElementById("chan").onchange = e => oldChannels.show = e.target.checked;
 document.getElementById("exag").onchange = e => { viewer.scene.verticalExaggeration = e.target.checked ? 2 : 1; setLevel(+slider.value); };
 document.getElementById("dmid").textContent = "50";
 document.getElementById("dmax").textContent = "≥100 ft";

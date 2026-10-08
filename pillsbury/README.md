@@ -10,6 +10,7 @@ extract.py     the PDF part: georeference, datum, and an elevation for every con
 basin.py       where water can stand (cuts the canyon below the dam off)
 qa_capacity.py checks the result against PG&E's own area-capacity table
 rivers.sh      the rivers: cut the dam out (breach.py), route the upper Eel, depths (rivers.py)
+hist.py        the valley before the dam, from a 1916 Army survey
 web/index.html the viewer
 ```
 
@@ -19,6 +20,10 @@ web/index.html the viewer
 
 ```bash
 ./rivers.sh
+```
+
+```bash
+conda run -n grass python hist.py
 ```
 
 ```bash
@@ -62,6 +67,16 @@ What to read into it:
 - **Ponds are pits in the 2023 surface**, filled to the river's stage. Some are real hollows; some are interpolation between contours.
 - **Stage is set reach by reach**, so it can step where two reaches meet. That is why the winter water sometimes reads as pools rather than one ribbon.
 - **10 m cells.** The late-summer creek is narrower than one cell, so its map shows where it runs, not how wide it is.
+
+## The valley before the dam (`hist.py`)
+
+The USGS 1:62,500 Hullville quadrangle (published 1922) is a U.S. Army Corps of Engineers tactical map, "Surveyed in 1916", before Scott Dam flooded Gravelly Valley. It shows the Eel River and Rice Fork in their natural channels, the town of Hullville, and the dam site. USGS serves it as a GeoPDF, which GDAL reads with the `libgdal-pdf` plugin (`conda install -n grass -c conda-forge libgdal-pdf`). `hist.py` downloads it to `data/hist/` and:
+
+1. **Warps** the sheet (polyconic, NAD27) onto the viewer's lake grid at twice its resolution.
+2. **Fits it to the lidar.** A reconnaissance survey is only good to about 100 m. The sheet's blue ink is correlated with streams derived from the lidar, first globally outside the lake, where the ground hasn't changed (best shift: 90 m west, 136 m north), then tile by tile, inside the lake too. The tile shifts blend into a smooth warp. The largest local correction is about 170 m, in the east arm, where the 1916 river was drawn south of the valley.
+3. **Writes** `web/map1916.webp`, the sheet cut to the basin and the surveyed area, and `web/river1916.webp`, its blue ink alone: the 1916 channels, with gaps at labels and grid lines bridged.
+
+The viewer fades the map in with a slider and draws the 1916 channels over today's modelled rivers. They show where the river ran before the reservoir, not where it will run after removal: a century of sediment now covers that channel.
 
 ## How good is it
 

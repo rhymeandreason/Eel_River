@@ -41,5 +41,11 @@
   }
  },
  "upper_eel_sqmi": 289,
- "drainage_at_dam_sqmi_5m": 282
+ "drainage_at_dam_sqmi_5m": 282,
+ "survey1916": {
+  "source": "USGS 1:62,500 Hullville quadrangle (1922), U.S. Army Corps of Engineers, surveyed 1916",
+  "shift_east_m": -90,
+  "shift_north_m": 136,
+  "local_correction_max_m": 169
+ }
 }
