@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Removing Scott Dam</title>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f6f2e9; --ink: #1d1b17; --ink-2: #4f493f; --ink-3: #857d70;
+    --rule: rgba(29, 27, 23, .14); --accent: #8a3b1f; --water: #2a6496;
+    --serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --sans: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #17181a; --ink: #ede7db; --ink-2: #bdb4a5; --ink-3: #82796c;
+      --rule: rgba(237, 231, 219, .14); --accent: #e0956f; --water: #6fa8d6;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #17181a; --ink: #ede7db; --ink-2: #bdb4a5; --ink-3: #82796c;
+    --rule: rgba(237, 231, 219, .14); --accent: #e0956f; --water: #6fa8d6;
+  }
+  html, body, #map { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  #panel {
+    position: absolute; top: 16px; left: 16px; box-sizing: border-box;
+    width: 316px; max-width: calc(100vw - 32px); max-height: calc(100% - 56px); overflow-y: auto;
+    padding: 24px 24px 18px; border-radius: 2px;
+    background: color-mix(in srgb, var(--paper) 95%, transparent);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 18px 48px rgba(0, 0, 0, .32);
+    color: var(--ink); font: 15px/1.5 var(--serif);
+    -webkit-font-smoothing: antialiased; scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+  }
+  .kicker, .label, .ticks, .seg button, .opt, .foot {
+    font-family: var(--sans); -webkit-font-smoothing: antialiased;
+  }
+  .kicker { margin: 0; font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  #panel h1 {
+    margin: 10px 0 10px; font: 400 32px/1.02 var(--serif);
+    font-optical-sizing: auto; letter-spacing: -.015em; text-wrap: balance;
+  }
+  #panel h1 em { font-style: italic; }
+  .deck { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
+  section { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule); }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .label { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .figure { font: 400 24px/1 var(--serif); font-variant-numeric: lining-nums tabular-nums; }
+  .figure small, .stats dd small { margin-left: 2px; font: 500 11px var(--sans); letter-spacing: .02em; color: var(--ink-3); }
+  .note { margin: 10px 0 0; color: var(--ink-2); font-size: 14px; font-style: italic; line-height: 1.45; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; }
+  .stats div { padding: 0 10px; border-left: 1px solid var(--rule); }
+  .stats div:first-child { padding-left: 0; border-left: 0; }
+  .stats dt { font: 600 9.5px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .stats dd { margin: 6px 0 0; white-space: nowrap; font: 400 20px/1 var(--serif); font-variant-numeric: lining-nums tabular-nums; }
+  .seg { display: flex; margin-top: 12px; border: 1px solid var(--rule); }
+  .seg button {
+    flex: 1; padding: 8px 0; border: 0; background: none; cursor: pointer;
+    font-size: 11.5px; font-weight: 500; color: var(--ink-2); transition: background .15s, color .15s;
+  }
+  .seg button + button { border-left: 1px solid var(--rule); }
+  .seg button:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .seg button.on { color: var(--paper); background: var(--ink); }
+  input[type=range] { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 20px; margin: 8px 0 0; background: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 1px; background: var(--ink); }
+  input[type=range]::-moz-range-track { height: 1px; background: var(--ink); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; margin-top: -6.5px; border-radius: 50%;
+    background: var(--paper); border: 1.5px solid var(--ink);
+  }
+  input[type=range]::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: var(--paper); border: 1.5px solid var(--ink); }
+  #panel :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .opt { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+  .opt input[type=range] { flex: 1; margin: 0; }
+  .opt .val { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+  .opt input[type=checkbox] { margin: 0; accent-color: var(--ink); }
+  .ramp { height: 6px; margin-top: 10px; }
+  .ticks { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+  .foot { margin: 16px 0 0; padding-top: 10px; border-top: 1px solid var(--rule); font-size: 10px; line-height: 1.5; color: var(--ink-3); }
+  .foot b { font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  /* the water level is the panel's lead: big figure, heavy track filled with water */
+  .level { padding-top: 16px; }
+  .level .big { display: flex; align-items: baseline; gap: 6px; margin-top: 10px; }
+  .level .big .figure { font-size: 52px; letter-spacing: -.02em; }
+  .level .big .figure small { font-size: 14px; margin-left: 4px; }
+  .level .delta { margin: 6px 0 0; font-size: 14px; font-style: italic; color: var(--ink-2); }
+  .track { position: relative; margin-top: 16px; }
+  .track input[type=range] { height: 26px; margin: 0; }
+  .track input[type=range]::-webkit-slider-runnable-track {
+    height: 6px; border-radius: 3px;
+    background: linear-gradient(to right, var(--water) var(--pct, 0%), var(--rule) var(--pct, 0%));
+  }
+  .track input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--rule); }
+  .track input[type=range]::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--water); }
+  .track input[type=range]::-webkit-slider-thumb {
+    width: 22px; height: 22px; margin-top: -8px; border: 2px solid var(--ink); background: var(--paper);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+  }
+  .track input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border: 2px solid var(--ink); background: var(--paper); box-shadow: 0 1px 4px rgba(0, 0, 0, .25); }
+  .marks { position: relative; height: 8px; margin: 2px 11px 0; pointer-events: none; }
+  .marks i { position: absolute; top: 0; width: 1px; height: 6px; background: var(--ink-3); }
+  .level .seg { margin-top: 10px; border: 0; gap: 6px; }
+  .level .seg button { padding: 5px 0; border: 1px solid transparent; border-radius: 2px; font-size: 11px; color: var(--ink-3); }
+  .level .seg button + button { border-left: 1px solid transparent; }
+  .level .seg button.on { color: var(--ink); background: none; border-color: var(--rule); }
+  .level .stats { margin-top: 16px; padding-top: 12px; border-top: 1px dotted var(--rule); }
+  .level .stats dd { font-size: 17px; color: var(--ink-2); }
+  @media (max-width: 520px) {
+    .level .big .figure { font-size: 42px; }
+    #panel { top: auto; bottom: 36px; left: 16px; max-height: 52%; padding: 18px 18px 14px; }
+    #panel h1 { font-size: 26px; }
+  }
+  .ramp { background: linear-gradient(to right, rgb(150,205,240), rgb(60,140,200), rgb(20,70,140), rgb(8,30,80)); }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="panel">
+  <p class="kicker">Lake County · Upper Eel River</p>
+  <h1>Removing Scott Dam</h1>
+  <p class="deck">Since 1922, Scott Dam has blocked the upper Eel River, holding back Lake Pillsbury and cutting salmon and steelhead off from the headwaters. PG&amp;E now plans to surrender its Potter Valley Project and take the dam down. Federal and state environmental reviews are under way.</p>
+  <section class="level">
+    <span class="label">Water level</span>
+    <div class="big"><span class="figure" id="level"></span></div>
+    <p class="delta" id="delta"></p>
+    <div class="track">
+      <input id="slider" type="range" step="0.5" aria-label="Water level">
+      <div class="marks" id="marks"></div>
+    </div>
+    <div class="seg">
+      <button data-to="empty">Drained</button>
+      <button data-to="survey">July 2023</button>
+      <button data-to="full">Full pool</button>
+    </div>
+    <dl class="stats" id="stats"></dl>
+    <p class="note" id="gone" hidden>Lake gone. The rivers cross the 2023 lake floor and leave through the dam site; over the years they cut down into this sediment.</p>
+  </section>
+  <section>
+    <div class="head"><span class="label">River flow</span><span class="figure" id="cfs"></span></div>
+    <div class="seg" id="flows">
+      <button data-flow="summer">Late summer</button>
+      <button data-flow="winter">Winter</button>
+      <button data-flow="flood">2-yr flood</button>
+    </div>
+    <p class="note" id="flowstats"></p>
+  </section>
+  <section>
+    <span class="label">Display</span>
+    <label class="opt">Opacity <input id="opacity" type="range" min="0" max="1" step="0.01" value="0.85"><span class="val" id="opv">85%</span></label>
+    <label class="opt"><input id="exag" type="checkbox"> 2× vertical exaggeration</label>
+    <div class="ramp"></div>
+    <div class="ticks"><span>0 ft</span><span id="dmid"></span><span id="dmax"></span></div>
+  </section>
+  <p class="foot"><b>Sources</b> · The ground here is PG&amp;E's 2023 sonar survey of the lake floor (FERC P-77), joined to USGS 3DEP lidar. River flows from USGS stream gauges.</p>
+</div>
+<script type="module">
+const meta = await (await fetch("meta.json")).json();
+const G = meta.grid, W = G.width, H = G.height;
+const bed = new Float32Array(await (await fetch("lakebed.f32")).arrayBuffer());
+const basin = new Uint8Array(await (await fetch("basin.u8")).arrayBuffer());
+const FT = 1200 / 3937, OFF = meta.pge_minus_navd88_ft;
+const toM = pge => (pge - OFF) * FT;      // PG&E datum ft -> NAVD88 m
+const toPge = m => m / FT + OFF;
+
+let floor = Infinity, deepest = -1;
+for (let i = 0; i < bed.length; i++) {
+  const z = bed[i];
+  if (z > -9000 && z < floor) floor = z;
+  if (basin[i] && z > -9000 && (deepest < 0 || z < bed[deepest])) deepest = i;
+}
+
+function heightAt(lon, lat) {
+  const fx = (lon - G.west) / (G.east - G.west) * W - 0.5;
+  const fy = (G.north - lat) / (G.north - G.south) * H - 0.5;
+  if (fx < 0 || fy < 0 || fx > W - 1 || fy > H - 1) return floor;
+  const x0 = Math.floor(fx), y0 = Math.floor(fy), x1 = Math.min(x0 + 1, W - 1), y1 = Math.min(y0 + 1, H - 1);
+  const tx = fx - x0, ty = fy - y0, g = (x, y) => { const h = bed[y * W + x]; return h > -9000 ? h : floor; };
+  return (g(x0, y0) * (1 - tx) + g(x1, y0) * tx) * (1 - ty) + (g(x0, y1) * (1 - tx) + g(x1, y1) * tx) * ty;
+}
+
+const N = 33, tiling = new Cesium.GeographicTilingScheme();
+const viewer = new Cesium.Viewer("map", {
+  terrainProvider: new Cesium.CustomHeightmapTerrainProvider({
+    width: N, height: N, tilingScheme: tiling,
+    callback(x, y, level) {
+      const r = tiling.tileXYToRectangle(x, y, level), out = new Float32Array(N * N), d = Cesium.Math.toDegrees;
+      for (let j = 0; j < N; j++) {
+        const lat = d(r.north - (r.north - r.south) * j / (N - 1));
+        for (let i = 0; i < N; i++) out[j * N + i] = heightAt(d(r.west + (r.east - r.west) * i / (N - 1)), lat);
+      }
+      return out;
+    },
+  }),
+  baseLayer: new Cesium.ImageryLayer(new Cesium.UrlTemplateImageryProvider({
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    maximumLevel: 19, credit: "Imagery © Esri, Maxar, Earthstar Geographics",
+  })),
+  baseLayerPicker: false, geocoder: false, timeline: false, animation: false,
+  homeButton: false, sceneModePicker: false, navigationHelpButton: false,
+});
+window.viewer = viewer;  // for the console
+
+// The satellite photo shows the lake full, so the basin is painted as bare ground,
+// shaded from the DEM, under whatever water the slider leaves.
+const dxM = (G.east - G.west) / W * 111320 * Math.cos(Cesium.Math.toRadians((G.north + G.south) / 2));
+const dyM = (G.north - G.south) / H * 111320;
+{
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const cx = c.getContext("2d"), im = cx.createImageData(W, H), px = im.data;
+  const at = (x, y) => bed[Math.min(H - 1, Math.max(0, y)) * W + Math.min(W - 1, Math.max(0, x))];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x;
+    if (!basin[i]) continue;
+    const gx = (at(x + 1, y) - at(x - 1, y)) / (2 * dxM), gy = (at(x, y - 1) - at(x, y + 1)) / (2 * dyM);
+    // Lambert shading, sun in the north-west 45 degrees up; slopes doubled so the low
+    // relief of a sediment flat still reads
+    const sx = 2 * gx, sy = 2 * gy;
+    const shade = Math.max(0, Math.min(1, (0.5 * sx - 0.5 * sy + 0.7071) / Math.sqrt(1 + sx * sx + sy * sy)));
+    px[i * 4] = 70 + 120 * shade; px[i * 4 + 1] = 60 + 105 * shade; px[i * 4 + 2] = 45 + 80 * shade; px[i * 4 + 3] = 255;
+  }
+  cx.putImageData(im, 0, 0);
+  viewer.imageryLayers.add(new Cesium.ImageryLayer(await Cesium.SingleTileImageryProvider.fromUrl(c.toDataURL(), {
+    rectangle: Cesium.Rectangle.fromDegrees(G.west, G.south, G.east, G.north),
+    credit: "Lakebed: PG&E 2023 bathymetric survey (FERC P-77) + USGS 3DEP",
+  })));
+}
+
+// Water is a flat plane at the slider's height; the terrain hides it wherever the ground
+// is higher. A shader keeps it only on cells that connect to the lake bottom at that level,
+// read from fillLevel: the lowest water level at which each cell joins the lake (a
+// priority flood from the deepest point, inside build.sh's basin mask, which is what stops
+// the water at Scott Dam since the bare-earth lidar has no dam in it). Moving the slider
+// changes one uniform.
+const fillLevel = new Float32Array(W * H).fill(Infinity);
+{
+  // binary min-heap of cell indices keyed on fillLevel
+  const heap = new Int32Array(W * H); let n = 0;
+  const up = k => { const v = heap[k]; while (k > 0) { const p = (k - 1) >> 1; if (fillLevel[heap[p]] <= fillLevel[v]) break; heap[k] = heap[p]; k = p; } heap[k] = v; };
+  const down = k => { const v = heap[k]; for (;;) { let c = 2 * k + 1; if (c >= n) break; if (c + 1 < n && fillLevel[heap[c + 1]] < fillLevel[heap[c]]) c++; if (fillLevel[heap[c]] >= fillLevel[v]) break; heap[k] = heap[c]; k = c; } heap[k] = v; };
+  const done = new Uint8Array(W * H);
+  fillLevel[deepest] = bed[deepest]; heap[n++] = deepest;
+  while (n) {
+    const i = heap[0]; heap[0] = heap[--n]; if (n) down(0);
+    if (done[i]) continue; done[i] = 1;
+    const x = i % W, y = (i / W) | 0;
+    for (const j of [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1, y > 0 ? i - W : -1, y < H - 1 ? i + W : -1]) {
+      if (j < 0 || done[j] || !basin[j]) continue;
+      const f = Math.max(fillLevel[i], bed[j]);
+      if (f < fillLevel[j]) { fillLevel[j] = f; heap[n++] = j; up(n - 1); }
+    }
+  }
+}
+
+// Area and volume at any level from prefix sums over cells ordered by fillLevel.
+const cellM2 = dxM * dyM;
+const order = Array.from(fillLevel.keys()).filter(i => fillLevel[i] < Infinity).sort((a, b) => fillLevel[a] - fillLevel[b]);
+const sortedFill = Float64Array.from(order, i => fillLevel[i]);
+const bedSum = new Float64Array(order.length + 1);
+order.forEach((i, k) => bedSum[k + 1] = bedSum[k] + bed[i]);
+function lakeAt(levelM) {
+  let lo = 0, hi = sortedFill.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (sortedFill[m] < levelM) lo = m + 1; else hi = m; }
+  return { area: lo * cellM2, vol: (lo * levelM - bedSum[lo]) * cellM2, maxD: lo ? levelM - bed[deepest] : 0 };
+}
+
+// bed and fillLevel as 16-bit values split over two 8-bit channels. Linear filtering is
+// safe: 256*hi + lo is linear in hi and lo, so the shader recovers the interpolated value.
+const zMin = bed[deepest], zRange = toM(meta.full_pool_pge_ft) + 1 - zMin;
+function packed(src, blank) {
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const cx = c.getContext("2d"), im = cx.createImageData(W, H), px = im.data;
+  for (let i = 0; i < W * H; i++) {
+    const v = basin[i] && src[i] < Infinity ? Math.round(Math.min(1, Math.max(0, (src[i] - zMin) / zRange)) * 65534) : blank;
+    px[i * 4] = v >> 8; px[i * 4 + 1] = v & 255; px[i * 4 + 3] = 255;
+  }
+  cx.putImageData(im, 0, 0);
+  return c.toDataURL();
+}
+const material = new Cesium.Material({
+  fabric: {
+    uniforms: { bedTex: packed(bed, 0), fillTex: packed(fillLevel, 65535), level: 0, zMin, zRange, alpha: 0.85 },
+    source: `
+      float unpack(vec4 t) { return (t.r * 65280.0 + t.g * 255.0) / 65534.0; }
+      vec3 ramp(float ft) {
+        vec3 a = vec3(150., 205., 240.), b = vec3(60., 140., 200.), c = vec3(20., 70., 140.), d = vec3(8., 30., 80.);
+        vec3 col = ft < 33. ? mix(a, b, ft / 33.) : ft < 66. ? mix(b, c, (ft - 33.) / 33.) : mix(c, d, clamp((ft - 66.) / 34., 0., 1.));
+        return col / 255.;
+      }
+      czm_material czm_getMaterial(czm_materialInput materialInput) {
+        czm_material m = czm_getDefaultMaterial(materialInput);
+        vec2 st = materialInput.st;
+        vec4 f = texture(fillTex, st);
+        if (f.r > 0.999) discard;
+        if (zMin + unpack(f) * zRange >= level) discard;
+        float bedM = zMin + unpack(texture(bedTex, st)) * zRange;
+        m.diffuse = ramp(max(level - bedM, 0.) / ${FT});
+        m.alpha = alpha;
+        return m;
+      }`,
+  },
+});
+const rect = Cesium.Rectangle.fromDegrees(G.west, G.south, G.east, G.north);
+const water = viewer.scene.primitives.add(new Cesium.Primitive({
+  geometryInstances: new Cesium.GeometryInstance({ geometry: new Cesium.RectangleGeometry({
+    rectangle: rect, height: 0, granularity: Cesium.Math.toRadians(0.001),
+    vertexFormat: Cesium.MaterialAppearance.MaterialSupport.TEXTURED.vertexFormat,
+  }) }),
+  appearance: new Cesium.MaterialAppearance({ material, flat: true, translucent: true }),
+  asynchronous: false,
+}));
+// lift the whole plane along the local vertical: across 10 km this is within a metre of
+// a true level surface
+const centre = Cesium.Cartesian3.fromRadians((rect.west + rect.east) / 2, (rect.south + rect.north) / 2);
+const upAxis = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(centre, new Cesium.Cartesian3());
+
+function setLevel(levelPge) {
+  const levelM = toM(levelPge), s = lakeAt(levelM);
+  material.uniforms.level = levelM;
+  const h = levelM * viewer.scene.verticalExaggeration;  // terrain is exaggerated, primitives are not
+  water.modelMatrix = Cesium.Matrix4.fromTranslation(Cesium.Cartesian3.multiplyByScalar(upAxis, h, new Cesium.Cartesian3()));
+  document.getElementById("level").innerHTML = `${levelPge.toFixed(1)}<small>ft</small>`;
+  const below = meta.full_pool_pge_ft - levelPge;
+  document.getElementById("delta").textContent = !s.area ? "Lakebed fully exposed"
+    : below < 0.05 ? "At full pool" : `${below.toFixed(1)} ft below full pool`;
+  slider.style.setProperty("--pct", `${(levelPge - slider.min) / (slider.max - slider.min) * 100}%`);
+  const n = v => Math.round(v).toLocaleString();
+  document.getElementById("stats").innerHTML = s.area
+    ? `<div><dt>Surface</dt><dd>${n(s.area / 4046.86)}<small>ac</small></dd></div>` +
+      `<div><dt>Volume</dt><dd>${n(s.vol / 1233.48)}<small>ac-ft</small></dd></div>` +
+      `<div><dt>Deepest</dt><dd>${n(s.maxD / FT)}<small>ft</small></dd></div>`
+    : "";
+  document.getElementById("stats").hidden = !s.area;
+  document.getElementById("gone").hidden = !!s.area;
+  document.querySelectorAll("[data-to]").forEach(b =>
+    b.classList.toggle("on", Math.abs(presets[b.dataset.to] - levelPge) < 0.05));
+}
+
+// Rivers across the drained bed, one pre-made layer per flow (rivers.py). They sit on the
+// terrain, under the lake plane, so the lake covers them wherever it still stands.
+const riverLayers = {};
+for (const key of Object.keys(meta.rivers)) {
+  riverLayers[key] = new Cesium.ImageryLayer(
+    await Cesium.SingleTileImageryProvider.fromUrl(`river_${key}.png`, { rectangle: rect }), { show: false });
+  viewer.imageryLayers.add(riverLayers[key]);
+}
+function setFlow(key) {
+  for (const [k, layer] of Object.entries(riverLayers)) layer.show = k === key;
+  document.querySelectorAll("[data-flow]").forEach(b => b.classList.toggle("on", b.dataset.flow === key));
+  const r = meta.rivers[key];
+  document.getElementById("cfs").innerHTML = `${r.cfs_at_dam.toLocaleString()}<small>cfs</small>`;
+  document.getElementById("flowstats").textContent = `${r.label}, leaving through the dam site.`;
+}
+document.querySelectorAll("[data-flow]").forEach(b => b.onclick = () => setFlow(b.dataset.flow));
+setFlow("winter");
+
+const minPge = Math.floor(toPge(bed[deepest])), presets = {
+  full: meta.full_pool_pge_ft, survey: meta.survey_water_pge_ft, empty: minPge,
+};
+const slider = document.getElementById("slider");
+Object.assign(slider, { min: minPge, max: meta.full_pool_pge_ft, step: 0.1, value: meta.survey_water_pge_ft });
+slider.oninput = () => setLevel(+slider.value);
+// a tick under the track at each preset, aligned with the thumb's centre
+document.getElementById("marks").innerHTML = Object.values(presets).map(v =>
+  `<i style="left:${(v - slider.min) / (slider.max - slider.min) * 100}%"></i>`).join("");
+document.querySelectorAll("[data-to]").forEach(b => b.onclick = () => { slider.value = presets[b.dataset.to]; setLevel(+slider.value); });
+document.getElementById("opacity").oninput = e => {
+  material.uniforms.alpha = +e.target.value;
+  document.getElementById("opv").textContent = Math.round(e.target.value * 100) + "%";
+};
+document.getElementById("exag").onchange = e => { viewer.scene.verticalExaggeration = e.target.checked ? 2 : 1; setLevel(+slider.value); };
+document.getElementById("dmid").textContent = "50";
+document.getElementById("dmax").textContent = "≥100 ft";
+setLevel(+slider.value);
+
+const i = deepest, lon = G.west + ((i % W) + 0.5) / W * (G.east - G.west);
+const lat = G.north - (((i / W) | 0) + 0.5) / H * (G.north - G.south);
+viewer.camera.flyTo({
+  destination: Cesium.Cartesian3.fromDegrees(lon + 0.012, lat - 0.024, toM(1910) + 1900),
+  orientation: { heading: Cesium.Math.toRadians(-10), pitch: Cesium.Math.toRadians(-32), roll: 0 },
+  duration: 0,
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Downloads and intermediate rasters; run.sh, build.sh and rivers.sh rebuild them
+data/*.tif
+pillsbury/data/*
+!pillsbury/data/*.json
+!pillsbury/data/*.txt
+
+*.log
+*.aux.xml
+.DS_Store
+.claude/

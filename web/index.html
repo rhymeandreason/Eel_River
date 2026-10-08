@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eel River Runoff</title>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f6f2e9; --ink: #1d1b17; --ink-2: #4f493f; --ink-3: #857d70;
+    --rule: rgba(29, 27, 23, .14); --accent: #8a3b1f;
+    --serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --sans: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #17181a; --ink: #ede7db; --ink-2: #bdb4a5; --ink-3: #82796c;
+      --rule: rgba(237, 231, 219, .14); --accent: #e0956f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #17181a; --ink: #ede7db; --ink-2: #bdb4a5; --ink-3: #82796c;
+    --rule: rgba(237, 231, 219, .14); --accent: #e0956f;
+  }
+  html, body, #map { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  #panel {
+    position: absolute; top: 16px; left: 16px; box-sizing: border-box;
+    width: 316px; max-width: calc(100vw - 32px); max-height: calc(100% - 56px); overflow-y: auto;
+    padding: 24px 24px 18px; border-radius: 2px;
+    background: color-mix(in srgb, var(--paper) 95%, transparent);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 18px 48px rgba(0, 0, 0, .32);
+    color: var(--ink); font: 15px/1.5 var(--serif);
+    -webkit-font-smoothing: antialiased; scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+  }
+  .kicker, .label, .ticks, .seg button, .opt, .foot {
+    font-family: var(--sans); -webkit-font-smoothing: antialiased;
+  }
+  .kicker { margin: 0; font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  #panel h1 {
+    margin: 10px 0 10px; font: 400 32px/1.02 var(--serif);
+    font-optical-sizing: auto; letter-spacing: -.015em; text-wrap: balance;
+  }
+  #panel h1 em { font-style: italic; }
+  .deck { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
+  section { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule); }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .label { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .figure { font: 400 24px/1 var(--serif); font-variant-numeric: lining-nums tabular-nums; }
+  .figure small, .stats dd small { margin-left: 2px; font: 500 11px var(--sans); letter-spacing: .02em; color: var(--ink-3); }
+  .note { margin: 10px 0 0; color: var(--ink-2); font-size: 14px; font-style: italic; line-height: 1.45; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 14px 0 0; }
+  .stats div { padding: 0 10px; border-left: 1px solid var(--rule); }
+  .stats div:first-child { padding-left: 0; border-left: 0; }
+  .stats dt { font: 600 9.5px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .stats dd { margin: 6px 0 0; white-space: nowrap; font: 400 20px/1 var(--serif); font-variant-numeric: lining-nums tabular-nums; }
+  .seg { display: flex; margin-top: 12px; border: 1px solid var(--rule); }
+  .seg button {
+    flex: 1; padding: 8px 0; border: 0; background: none; cursor: pointer;
+    font-size: 11.5px; font-weight: 500; color: var(--ink-2); transition: background .15s, color .15s;
+  }
+  .seg button + button { border-left: 1px solid var(--rule); }
+  .seg button:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .seg button.on { color: var(--paper); background: var(--ink); }
+  input[type=range] { -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 20px; margin: 8px 0 0; background: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 1px; background: var(--ink); }
+  input[type=range]::-moz-range-track { height: 1px; background: var(--ink); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; margin-top: -6.5px; border-radius: 50%;
+    background: var(--paper); border: 1.5px solid var(--ink);
+  }
+  input[type=range]::-moz-range-thumb { width: 11px; height: 11px; border-radius: 50%; background: var(--paper); border: 1.5px solid var(--ink); }
+  #panel :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .opt { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+  .opt input[type=range] { flex: 1; margin: 0; }
+  .opt .val { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+  .opt input[type=checkbox] { margin: 0; accent-color: var(--ink); }
+  .ramp { height: 6px; margin-top: 10px; }
+  .ticks { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+  .foot { margin: 16px 0 0; padding-top: 10px; border-top: 1px solid var(--rule); font-size: 10px; line-height: 1.5; color: var(--ink-3); }
+  .foot b { font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  @media (max-width: 520px) {
+    #panel { top: auto; bottom: 36px; left: 16px; max-height: 52%; padding: 18px 18px 14px; }
+    #panel h1 { font-size: 26px; }
+  }
+  .ramp { background: linear-gradient(to right, rgba(199,233,255,.3), rgb(107,174,214), rgb(33,113,181), rgb(8,69,148), rgb(8,29,88)); }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="panel">
+  <p class="kicker">Mendocino County · Eel River</p>
+  <h1>Storm runoff</h1>
+  <p class="deck" id="summary">Loading…</p>
+  <section>
+    <div class="head"><span class="label">Deepest water</span><span class="figure" id="maxd"></span></div>
+  </section>
+  <section>
+    <span class="label">Display</span>
+    <label class="opt">Opacity <input id="opacity" type="range" min="0" max="1" step="0.01" value="0.8"><span class="val" id="opv">80%</span></label>
+    <label class="opt"><input id="exag" type="checkbox"> 2× vertical exaggeration</label>
+    <div class="ramp"></div>
+    <div class="ticks"><span id="t0"></span><span>3 cm</span><span>10 cm</span><span>30 cm</span><span>≥1 m</span></div>
+  </section>
+  <p class="foot"><b>Model</b> · GRASS GIS r.sim.water on USGS 3DEP lidar. Imagery © Esri, Maxar, Earthstar Geographics.</p>
+</div>
+<script type="module">
+const meta = await (await fetch("meta.json")).json();
+const T = meta.terrain;
+const grid = new Float32Array(await (await fetch("terrain.f32")).arrayBuffer());
+
+// Lowest valid height: the plinth everything outside the DEM sits on.
+let floor = Infinity;
+for (const h of grid) if (h > -9000 && h < floor) floor = h;
+
+// Bilinear sample of the lon/lat DEM grid (row 0 = north edge, pixel-is-area).
+function heightAt(lon, lat) {
+  const fx = (lon - T.west) / (T.east - T.west) * T.width - 0.5;
+  const fy = (T.north - lat) / (T.north - T.south) * T.height - 0.5;
+  if (fx < 0 || fy < 0 || fx > T.width - 1 || fy > T.height - 1) return floor;
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const x1 = Math.min(x0 + 1, T.width - 1), y1 = Math.min(y0 + 1, T.height - 1);
+  const tx = fx - x0, ty = fy - y0, g = (x, y) => {
+    const h = grid[y * T.width + x]; return h > -9000 ? h : floor;
+  };
+  return (g(x0, y0) * (1 - tx) + g(x1, y0) * tx) * (1 - ty) +
+         (g(x0, y1) * (1 - tx) + g(x1, y1) * tx) * ty;
+}
+
+const N = 33;  // heightmap samples per tile edge
+const tiling = new Cesium.GeographicTilingScheme();
+const terrainProvider = new Cesium.CustomHeightmapTerrainProvider({
+  width: N, height: N, tilingScheme: tiling,
+  callback(x, y, level) {
+    const r = tiling.tileXYToRectangle(x, y, level), out = new Float32Array(N * N);
+    const toDeg = Cesium.Math.toDegrees;
+    for (let j = 0; j < N; j++) {
+      const lat = toDeg(r.north - (r.north - r.south) * j / (N - 1));
+      for (let i = 0; i < N; i++)
+        out[j * N + i] = heightAt(toDeg(r.west + (r.east - r.west) * i / (N - 1)), lat);
+    }
+    return out;
+  },
+});
+
+const imagery = new Cesium.UrlTemplateImageryProvider({
+  url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  maximumLevel: 19,
+  credit: "Imagery © Esri, Maxar, Earthstar Geographics",
+});
+
+const viewer = new Cesium.Viewer("map", {
+  terrainProvider,
+  baseLayer: new Cesium.ImageryLayer(imagery),
+  baseLayerPicker: false, geocoder: false, timeline: false, animation: false,
+  homeButton: false, sceneModePicker: false, navigationHelpButton: false,
+});
+viewer.scene.globe.depthTestAgainstTerrain = true;
+window.viewer = viewer;  // for the console
+
+const W = meta.water;
+const water = new Cesium.ImageryLayer(
+  await Cesium.SingleTileImageryProvider.fromUrl("water_depth.png", {
+    rectangle: Cesium.Rectangle.fromDegrees(W.west, W.south, W.east, W.north),
+    credit: "r.sim.water (GRASS GIS) on USGS 3DEP",
+  }), { alpha: 0.8 });
+viewer.imageryLayers.add(water);
+
+const opacity = document.getElementById("opacity");
+opacity.oninput = () => {
+  water.alpha = +opacity.value;
+  document.getElementById("opv").textContent = Math.round(opacity.value * 100) + "%";
+};
+document.getElementById("exag").onchange = e =>
+  viewer.scene.verticalExaggeration = e.target.checked ? 2 : 1;
+
+const p = meta.params;
+document.getElementById("t0").textContent = `${p.min_depth_m * 100} cm`;
+document.getElementById("summary").textContent =
+  `A ${p.box_m / 1000} × ${p.box_m / 1000} km box of the upper Eel, four kilometres above Cape Horn Dam. ` +
+  `${p.rain_mm_hr} mm/hr of rain falls for ${p.minutes} minutes on saturated ground ` +
+  `(infiltration ${p.infil_mm_hr} mm/hr, Manning's n ${p.manning_n}, ${p.cell_m} m cells).`;
+document.getElementById("maxd").innerHTML = `${meta.depth_m.max.toFixed(1)}<small>m</small>`;
+
+const cLon = (W.west + W.east) / 2, cLat = (W.south + W.north) / 2;
+viewer.camera.flyTo({
+  destination: Cesium.Cartesian3.fromDegrees(cLon, cLat - 0.02, heightAt(cLon, cLat) + 1500),
+  orientation: { heading: 0, pitch: Cesium.Math.toRadians(-35), roll: 0 },
+  duration: 0,
+});
+</script>
+</body>
+</html>

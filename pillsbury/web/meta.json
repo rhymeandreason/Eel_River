@@ -1,0 +1,45 @@
+{
+ "grid": {
+  "west": -123.003141568616,
+  "north": 39.4700922624411,
+  "east": -122.88679230523117,
+  "south": 39.379901820472,
+  "width": 1619,
+  "height": 1255
+ },
+ "pge_minus_navd88_ft": 78.54999999999986,
+ "full_pool_pge_ft": 1910,
+ "spill_crest_pge_ft": 1900,
+ "survey_water_pge_ft": 1897.3,
+ "lidar_water_pge_ft": 1888.05,
+ "contour_vs_ramp_m": {
+  "mean": 0.225596183264552,
+  "sd": 0.541589876085486
+ },
+ "ramp_lidar_agree": [
+  14,
+  15
+ ],
+ "rivers": {
+  "summer": {
+   "label": "Late summer",
+   "cfs_at_dam": 7,
+   "wet_acres": 55,
+   "max_depth_ft": 2.8
+  },
+  "winter": {
+   "label": "Typical winter day",
+   "cfs_at_dam": 756,
+   "wet_acres": 250,
+   "max_depth_ft": 4.3
+  },
+  "flood": {
+   "label": "2-year flood peak",
+   "cfs_at_dam": 12938,
+   "wet_acres": 528,
+   "max_depth_ft": 11.5
+  }
+ },
+ "upper_eel_sqmi": 289,
+ "drainage_at_dam_sqmi_5m": 282
+}

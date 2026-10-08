@@ -1,0 +1,15 @@
+ENVI
+description = {
+web/basin.u8}
+samples = 1619
+lines   = 1255
+bands   = 1
+header offset = 0
+file type = ENVI Standard
+data type = 1
+interleave = bsq
+byte order = 0
+map info = {Geographic Lat/Lon, 1, 1, -123.003141568616, 39.4700922624411, 7.18648939992795e-05, 7.18648939992823e-05,WGS-84}
+coordinate system string = {GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]}
+band names = {
+Band 1}
